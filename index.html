@@ -221,10 +221,23 @@
   </div>
 </div>
 
-<script>
-const BIN_ID = "6a2a6d3fda38895dfeabe333";
-const API_KEY = "$2a$10$P7VEzBc.j5zUfCUNbw/X5e10mHmBgEXLeOF8ONana6GfCMdt2VMTi";
-const BASE_URL = "https://api.jsonbin.io/v3/b/" + BIN_ID;
+<script type="module">
+// ── Firebase Config (same project as ArenaAspire) ──
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBP2AEZ4m3p7IxyW0u2uj07i2VofJv0Y0E",
+  authDomain: "arenaaspire-4578c.firebaseapp.com",
+  projectId: "arenaaspire-4578c",
+  storageBucket: "arenaaspire-4578c.firebasestorage.app",
+  messagingSenderId: "320361458444",
+  appId: "1:320361458444:web:0db9aaba48e034c41df729"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const ARENA_NUMBER = "918828823738";
 
 let config = null;
@@ -237,11 +250,9 @@ let savedAlone = false;
 
 async function loadConfig(){
   try{
-    const res = await fetch(BASE_URL + "/latest", {
-      headers: { "X-Master-Key": API_KEY }
-    });
-    const data = await res.json();
-    config = data.record;
+    const docRef = doc(db, "slotConfig", "main");
+    const snap = await getDoc(docRef);
+    config = snap.exists() ? snap.data() : { dates: {} };
   }catch(e){
     config = { dates: {} };
   }
@@ -391,6 +402,11 @@ function updateButton(){
 }
 
 loadConfig();
+
+// Expose functions needed by inline onclick handlers
+window.selectDate = selectDate;
+window.selectSlot = selectSlot;
+window.updateButton = updateButton;
 </script>
 
 </body>
