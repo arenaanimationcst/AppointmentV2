@@ -221,23 +221,10 @@
   </div>
 </div>
 
-<script type="module">
-// ── Firebase Config (same project as ArenaAspire) ──
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBP2AEZ4m3p7IxyW0u2uj07i2VofJv0Y0E",
-  authDomain: "arenaaspire-4578c.firebaseapp.com",
-  projectId: "arenaaspire-4578c",
-  storageBucket: "arenaaspire-4578c.firebasestorage.app",
-  messagingSenderId: "320361458444",
-  appId: "1:320361458444:web:0db9aaba48e034c41df729"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
+<script>
+const BIN_ID = "6a2a6d3fda38895dfeabe333";
+const API_KEY = "$2a$10$P7VEzBc.j5zUfCUNbw/X5e10mHmBgEXLeOF8ONana6GfCMdt2VMTi";
+const BASE_URL = "https://api.jsonbin.io/v3/b/" + BIN_ID;
 const ARENA_NUMBER = "918828823738";
 
 let config = null;
@@ -250,9 +237,11 @@ let savedAlone = false;
 
 async function loadConfig(){
   try{
-    const docRef = doc(db, "slotConfig", "main");
-    const snap = await getDoc(docRef);
-    config = snap.exists() ? snap.data() : { dates: {} };
+    const res = await fetch(BASE_URL + "/latest", {
+      headers: { "X-Master-Key": API_KEY }
+    });
+    const data = await res.json();
+    config = data.record;
   }catch(e){
     config = { dates: {} };
   }
@@ -380,15 +369,19 @@ function updateButton(){
     btn.classList.remove('disabled');
     const fullDate = new Date(selectedDate+"T00:00:00").toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
     const parentLine = alone ? 'Attending alone' : parent;
-    const msg = `Hi! I would like to book an appointment.
+    const hi     = "\u{1F44B}";
+    const clap   = "\u{1F3AC}";
+    const phone  = "\u{1F4F1}";
+    const family = "\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F466}";
+    const cal    = "\u{1F4C5}";
+    const clock  = "\u{23F0}";
+    const check  = "\u{2705}";
+    const pin    = "\u{1F4CD}";
+    const tel    = "\u{1F4DE}";
+    const mapico = "\u{1F5FA}";
+    const thumbs = "\u{1F44D}";
 
-Student Name: ${name}
-Mobile: ${num}
-Parent/Guardian: ${parentLine}
-Date: ${fullDate}
-Time: ${selectedSlot}
-
-Please confirm my slot. Thank you!`;
+    const msg = `Hi! ${hi} I’d like to confirm my appointment at Arena Animation CST ${clap}\n${phone} Mobile: ${num}\n${family} Parent/Guardian: ${parentLine}\n${cal} Date: ${fullDate}\n${clock} Time: ${selectedSlot}\n\n${check} I am confirming this appointment and shall reach on the below address:\n\n${pin} Address: Arena Animation CST\n142, Dr Dadabhai Naoroji Rd, near Akbar Travels, Fort, Mumbai – 400001\n${tel} Call/WhatsApp: 088288 23738\n${mapico} Location: https://maps.app.goo.gl/cx7QeQ3vwaoLytb16\n\nRegards and Thanks!! ${thumbs}\n${name}`;
     btn.href = `https://wa.me/${ARENA_NUMBER}?text=${encodeURIComponent(msg)}`;
     btn.target = "_blank";
   }else{
@@ -398,11 +391,6 @@ Please confirm my slot. Thank you!`;
 }
 
 loadConfig();
-
-// Expose functions needed by inline onclick handlers
-window.selectDate = selectDate;
-window.selectSlot = selectSlot;
-window.updateButton = updateButton;
 </script>
 
 </body>
