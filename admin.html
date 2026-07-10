@@ -269,6 +269,58 @@ function checkLogin(){
   }
 }
 
+function maintainRollingDates(){
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  // Build the 12-day window: past 6 days + today + next 5 days
+  const windowDates = [];
+  for(let i = -6; i <= 5; i++){
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const key = d.toISOString().split('T')[0]; // "YYYY-MM-DD"
+    windowDates.push(key);
+  }
+
+  let changed = false;
+
+  // 1. DELETE dates outside the 12-day window
+  Object.keys(config.dates).forEach(dateStr => {
+    if(!windowDates.includes(dateStr)){
+      delete config.dates[dateStr];
+      changed = true;
+    }
+  });
+
+  // 2. AUTO-CLOSE past dates (before today)
+  Object.keys(config.dates).forEach(dateStr => {
+    const d = new Date(dateStr + "T00:00:00");
+    if(d < today && config.dates[dateStr].available !== false){
+      config.dates[dateStr].available = false;
+      // Also close all slots
+      (config.dates[dateStr].slots || []).forEach(slot => {
+        slot.available = false;
+      });
+      changed = true;
+    }
+  });
+
+  // 3. ADD missing dates in the window with default slots
+  windowDates.forEach(dateStr => {
+    if(!config.dates[dateStr]){
+      const d = new Date(dateStr + "T00:00:00");
+      const isFuture = d >= today;
+      config.dates[dateStr] = {
+        available: isFuture,
+        slots: DEFAULT_SLOTS.map(t => ({ time: t, available: isFuture }))
+      };
+      changed = true;
+    }
+  });
+
+  return changed; // true if Firestore needs to be updated
+}
+
 async function loadConfig(){
   try{
     const docRef = doc(db, "slotConfig", "main");
@@ -277,6 +329,20 @@ async function loadConfig(){
   }catch(e){
     config = { dates: {} };
   }
+
+  // Run rolling window maintenance after fetching
+  const changed = maintainRollingDates();
+
+  // If anything changed, save back to Firestore silently
+  if(changed){
+    try{
+      const docRef = doc(db, "slotConfig", "main");
+      await setDoc(docRef, config);
+    }catch(e){
+      console.warn("Auto-save after maintainRollingDates failed:", e);
+    }
+  }
+
   render();
 }
 
