@@ -224,7 +224,7 @@
 <script type="module">
 // ── Firebase Config (same project as ArenaAspire) ──
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBP2AEZ4m3p7IxyW0u2uj07i2VofJv0Y0E",
@@ -391,10 +391,26 @@ function updateButton(){
     const tel    = "\u{1F4DE}";
     const mapico = "\u{1F5FA}";
     const thumbs = "\u{1F44D}";
-
     const msg = `Hi! ${hi} I’d like to confirm my appointment at Arena Animation CST ${clap}\n${phone} Mobile: ${num}\n${family} Parent/Guardian: ${parentLine}\n${cal} Date: ${fullDate}\n${clock} Time: ${selectedSlot}\n\n${check} I am confirming this appointment and shall reach on the below address:\n\n${pin} Address: Arena Animation CST\n142, Dr Dadabhai Naoroji Rd, near Akbar Travels, Fort, Mumbai – 400001\n${tel} Call/WhatsApp: 088288 23738\n${mapico} Location: https://maps.app.goo.gl/cx7QeQ3vwaoLytb16\n\nRegards and Thanks!! ${thumbs}\n${name}`;
-    btn.href = `https://wa.me/${ARENA_NUMBER}?text=${encodeURIComponent(msg)}`;
-    btn.target = "_blank";
+    // Save booking to Firestore before opening WhatsApp
+    btn.onclick = async (e) => {
+      e.preventDefault();
+      try {
+        await addDoc(collection(db, "bookings"), {
+          name: name,
+          mobile: num,
+          date: selectedDate,
+          slot: selectedSlot,
+          parentGuardian: parentLine,
+          status: "pending",
+          bookedAt: new Date().toISOString()
+        });
+      } catch(err) {
+        console.warn("Booking save failed:", err);
+      }
+      window.open(`https://wa.me/${ARENA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+    };
+    btn.href = "#";
   }else{
     btn.classList.add('disabled');
     btn.removeAttribute('href');
