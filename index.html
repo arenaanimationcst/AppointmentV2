@@ -392,12 +392,15 @@ function updateButton(){
     const mapico = "\u{1F5FA}";
     const thumbs = "\u{1F44D}";
     const msg = `Hi! ${hi} I’d like to confirm my appointment at Arena Animation CST ${clap}\n${phone} Mobile: ${num}\n${family} Parent/Guardian: ${parentLine}\n${cal} Date: ${fullDate}\n${clock} Time: ${selectedSlot}\n\n${check} I am confirming this appointment and shall reach on the below address:\n\n${pin} Address: Arena Animation CST\n142, Dr Dadabhai Naoroji Rd, near Akbar Travels, Fort, Mumbai – 400001\n${tel} Call/WhatsApp: 088288 23738\n${mapico} Location: https://maps.app.goo.gl/cx7QeQ3vwaoLytb16\n\nRegards and Thanks!! ${thumbs}\n${name}`;
-    // Open WhatsApp immediately (required for iPhone Safari), save to Firestore in background
     const waUrl = `https://wa.me/${ARENA_NUMBER}?text=${encodeURIComponent(msg)}`;
-    btn.href = waUrl;
-    btn.target = "_blank";
+    btn.removeAttribute('href');
     btn.onclick = (e) => {
-      // Fire-and-forget Firestore save — don't await so Safari doesn't block the tap
+      e.preventDefault();
+      e.stopPropagation();
+      // Disable immediately to prevent duplicate taps
+      btn.classList.add('disabled');
+      btn.onclick = null;
+      // Save to Firestore in background (fire-and-forget)
       addDoc(collection(db, "bookings"), {
         name: name,
         mobile: num,
@@ -407,10 +410,8 @@ function updateButton(){
         status: "pending",
         bookedAt: new Date().toISOString()
       }).catch(err => console.warn("Booking save failed:", err));
-      // Disable button immediately to prevent duplicate bookings
-      btn.classList.add('disabled');
-      btn.onclick = null;
-      btn.href = "#";
+      // Use location.href — works on iPhone Safari without popup block
+      window.location.href = waUrl;
     };
   }else{
     btn.classList.add('disabled');
